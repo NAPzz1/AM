@@ -7,9 +7,14 @@ console.log("ADMIN BOT FILE LOADED");
 const bot = new TelegramBot(
     process.env.ADMIN_BOT_TOKEN!,
     {
-        polling: true
+        polling: {
+            interval: 1000,
+            autoStart: true
+        }
     }
 );
+
+console.log("POLLING ENABLED");
 
 console.log("BOT CREATED");
 
@@ -30,3 +35,7 @@ bot.getMe()
     });
 
 export default bot;
+
+bot.on("message", (msg) => {
+    console.log("RAW MESSAGE:", msg.text, msg.from?.id);
+});
