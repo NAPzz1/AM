@@ -2,6 +2,7 @@ import "dotenv/config";
 
 import TelegramBot from "node-telegram-bot-api";
 import { startHandler } from "./handlers/start";
+import { adminMenuHandler } from "./handlers/adminMenu";
 
 console.log("ADMIN BOT FILE LOADED");
 
@@ -47,6 +48,20 @@ bot.onText(/\/start/, async (msg) => {
     } catch (error) {
         console.log("START HANDLER ERROR:", error);
     }
+});
+
+bot.on("message", async (msg) => {
+
+    if (!msg.text) return;
+
+    if (msg.text.startsWith("/")) return;
+
+    try {
+        await adminMenuHandler(bot, msg);
+    } catch (error) {
+        console.log("MENU ERROR:", error);
+    }
+
 });
 
 export default bot;
