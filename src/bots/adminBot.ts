@@ -1,6 +1,7 @@
 import "dotenv/config";
 
 import TelegramBot from "node-telegram-bot-api";
+import { startHandler } from "./handlers/start";
 
 console.log("ADMIN BOT FILE LOADED");
 
@@ -13,8 +14,6 @@ const bot = new TelegramBot(
         }
     }
 );
-
-console.log("POLLING ENABLED");
 
 console.log("BOT CREATED");
 
@@ -34,8 +33,18 @@ bot.getMe()
         console.log("GETME FAILED:", err.message);
     });
 
-export default bot;
-
 bot.on("message", (msg) => {
     console.log("RAW MESSAGE:", msg.text, msg.from?.id);
 });
+
+bot.onText(/\/start/, async (msg) => {
+    console.log("START RECEIVED:", msg.from?.id);
+
+    try {
+        await startHandler(bot, msg);
+    } catch (error) {
+        console.log("START HANDLER ERROR:", error);
+    }
+});
+
+export default bot;
