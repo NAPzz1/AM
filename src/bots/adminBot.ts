@@ -9,8 +9,11 @@ const bot = new TelegramBot(
     process.env.ADMIN_BOT_TOKEN!,
     {
         polling: {
-            interval: 1000,
-            autoStart: true
+            interval: 3000,
+            autoStart: true,
+            params: {
+                timeout: 30
+            }
         }
     }
 );
@@ -25,13 +28,6 @@ bot.on("error", (error) => {
     console.log("BOT ERROR:", error.message);
 });
 
-bot.getMe()
-    .then((info) => {
-        console.log("BOT CONNECTED:", info.username);
-    })
-    .catch((err) => {
-        console.log("GETME FAILED:", err.message);
-    });
 
 
 // Debug incoming messages
