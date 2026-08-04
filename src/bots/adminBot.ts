@@ -16,6 +16,7 @@ const bot = new TelegramBot(
 );
 
 console.log("POLLING ENABLED");
+
 console.log("BOT CREATED");
 
 bot.on("polling_error", (error) => {
