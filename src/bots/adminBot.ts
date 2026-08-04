@@ -2,23 +2,31 @@ import "dotenv/config";
 
 import TelegramBot from "node-telegram-bot-api";
 
+console.log("ADMIN BOT FILE LOADED");
+
 const bot = new TelegramBot(
-    process.env.ADMIN_BOT_TOKEN!
+    process.env.ADMIN_BOT_TOKEN!,
+    {
+        polling: true
+    }
 );
+
+console.log("BOT CREATED");
+
+bot.on("polling_error", (error) => {
+    console.log("POLLING ERROR:", error.message);
+});
+
+bot.on("error", (error) => {
+    console.log("BOT ERROR:", error.message);
+});
 
 bot.getMe()
     .then((info) => {
-        console.log("SUCCESS:", info.username);
-        process.exit(0);
+        console.log("BOT CONNECTED:", info.username);
     })
     .catch((err) => {
-        console.log("FAILED:", err);
-        process.exit(1);
+        console.log("GETME FAILED:", err.message);
     });
-
-setTimeout(() => {
-    console.log("TELEGRAM REQUEST TIMED OUT");
-    process.exit(1);
-}, 10000);
 
 export default bot;
