@@ -52,7 +52,14 @@ router.post("/book", async (req, res) => {
 
 
 
-    // Check existing booking
+// Alina can create unlimited appointments
+// Clients can only have one active appointment
+
+const isAlina =
+    telegram_id === Number(process.env.ALINA_TELEGRAM_ID);
+
+
+if (!isAlina) {
 
     const { data: existingBooking } =
         await supabase
@@ -63,7 +70,6 @@ router.post("/book", async (req, res) => {
             .maybeSingle();
 
 
-
     if (existingBooking) {
 
         return res.status(400).json({
@@ -71,6 +77,8 @@ router.post("/book", async (req, res) => {
         });
 
     }
+
+}
 
 
 
@@ -713,5 +721,230 @@ router.get("/my/:telegram_id", async (req, res) => {
 
 
 });
+
+// ===============================
+// GET ALL ACTIVE APPOINTMENTS
+// MANAGER CALENDAR
+// ===============================
+
+router.get("/", async (req,res)=>{
+
+
+    const { data, error } =
+        await supabase
+            .from("appointments")
+            .select(`
+                id,
+                appointment_date,
+                appointment_time,
+                appointment_note,
+                status,
+
+                users(
+                    first_name,
+                    last_name
+                ),
+
+                services(
+                    name,
+                    duration,
+                    price
+                )
+
+            `)
+            .eq(
+                "status",
+                "confirmed"
+            )
+            .order(
+                "appointment_date"
+            )
+            .order(
+                "appointment_time"
+            );
+
+
+
+    if(error){
+
+        return res.status(500).json({
+            error:error.message
+        });
+
+    }
+
+
+
+    res.json(data);
+
+
+});
+
+// ===============================
+// ADMIN CREATE APPOINTMENT
+// ===============================
+
+router.post("/admin-create", async (req,res)=>{
+
+
+    const {
+        client,
+        service_id,
+        appointment_date,
+        appointment_time,
+        durationMinutes,
+        price,
+        notes
+    } = req.body;
+
+
+
+    if(
+        !client ||
+        !appointment_date ||
+        !appointment_time
+    ){
+
+        return res.status(400).json({
+
+            error:"Missing appointment information"
+
+        });
+
+    }
+
+
+
+
+    // Check overlap
+
+    const { data: existing } =
+        await supabase
+            .from("appointments")
+            .select(`
+                appointment_time,
+                services(
+                    duration
+                )
+            `)
+            .eq(
+                "appointment_date",
+                appointment_date
+            )
+            .eq(
+                "status",
+                "confirmed"
+            );
+
+
+
+    const start =
+        timeToMinutes(
+            appointment_time
+        );
+
+
+    const end =
+        start + durationMinutes;
+
+
+
+    const conflict =
+        existing?.some(item=>{
+
+
+            const existingStart =
+                timeToMinutes(
+                    item.appointment_time.substring(0,5)
+                );
+
+
+            const existingDuration =
+                item.services?.[0]?.duration || 0;
+
+
+            const existingEnd =
+                existingStart + existingDuration;
+
+
+
+            return (
+                start < existingEnd &&
+                end > existingStart
+            );
+
+
+        });
+
+
+
+    if(conflict){
+
+        return res.status(400).json({
+
+            error:"Appointment overlaps existing booking"
+
+        });
+
+    }
+
+
+
+
+    const { data, error } =
+    await supabase
+        .from("appointments")
+        .insert({
+
+            service_id,
+
+            appointment_date,
+
+            appointment_time,
+
+            status:"confirmed",
+
+            appointment_note:
+                notes || null
+
+        })
+        .select()
+        .single();
+
+
+    if(error){
+
+        return res.status(500).json({
+
+            error:error.message
+
+        });
+
+    }
+
+
+
+    res.json(data);
+
+
+});
+
+
+
+
+
+function timeToMinutes(time:string){
+
+    const [
+        hour,
+        minute
+    ] =
+    time.split(":").map(Number);
+
+
+
+    return hour * 60 + minute;
+
+}
 
 export default router;
